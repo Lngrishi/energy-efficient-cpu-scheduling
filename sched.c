@@ -1,4 +1,6 @@
- #include <stdio.h>
+/* Final code submission - CSE316 Project */
+
+#include <stdio.h>
 
 #define MAX_PROCESSES 10
 
