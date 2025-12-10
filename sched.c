@@ -12,6 +12,13 @@ typedef struct {
     int turnaround;
 } Process;
 
+/* function prototypes */
+void inputProcesses(Process p[], int *n);
+void printResults(Process p[], int n, const char *title,
+                  double busyTime, double idleTime);
+void fcfs(Process p[], int n);
+void roundRobin(Process p[], int n, int quantum);
+
 void inputProcesses(Process p[], int *n) {
     int i;
     printf("Enter number of processes (max %d): ", MAX_PROCESSES);
@@ -43,8 +50,8 @@ void printResults(Process p[], int n, const char *title,
     int i;
     double avgWait = 0.0, avgTat = 0.0;
 
-    
-    double busyPower = 2.0;   
+    /* simple power model */
+    double busyPower = 2.0;   /* units per time */
     double idlePower = 0.2;
     double totalEnergy = busyTime * busyPower + idleTime * idlePower;
 
@@ -109,24 +116,14 @@ void fcfs(Process p[], int n) {
     printResults(p, n, "FCFS Scheduling", busyTime, idleTime);
 }
 
-int main() {
-    Process procs[MAX_PROCESSES];
-    int n;
-
-    inputProcesses(procs, &n);
-    if (n <= 0 || n > MAX_PROCESSES) {
-        return 0;
-    }
-
-    fcfs(procs, n);
-
-    return 0;
-}
 void roundRobin(Process p[], int n, int quantum) {
     Process temp[MAX_PROCESSES];
+    int remaining[MAX_PROCESSES];
     int i;
+
     for (i = 0; i < n; i++) {
-        temp[i] = p[i];
+        temp[i] = p[i];              /* copy original */
+        remaining[i] = p[i].burst;   /* remaining time */
         temp[i].start = -1;
         temp[i].waiting = 0;
         temp[i].turnaround = 0;
@@ -141,18 +138,18 @@ void roundRobin(Process p[], int n, int quantum) {
         int executed = 0;
 
         for (i = 0; i < n; i++) {
-            if (temp[i].burst > 0 && temp[i].arrival <= time) {
+            if (remaining[i] > 0 && temp[i].arrival <= time) {
                 executed = 1;
 
                 if (temp[i].start == -1)
                     temp[i].start = time;
 
-                int execTime = (temp[i].burst > quantum) ? quantum : temp[i].burst;
-                temp[i].burst -= execTime;
+                int execTime = (remaining[i] > quantum) ? quantum : remaining[i];
+                remaining[i] -= execTime;
                 time += execTime;
                 busyTime += execTime;
 
-                if (temp[i].burst == 0) {
+                if (remaining[i] == 0) {
                     temp[i].completion = time;
                     completed++;
                 }
@@ -168,3 +165,29 @@ void roundRobin(Process p[], int n, int quantum) {
     printResults(temp, n, "Round Robin Scheduling", busyTime, idleTime);
 }
 
+int main() {
+    Process procs[MAX_PROCESSES];
+    int n, choice, quantum;
+
+    inputProcesses(procs, &n);
+    if (n <= 0 || n > MAX_PROCESSES) {
+        return 0;
+    }
+
+    printf("\n1. FCFS");
+    printf("\n2. Round Robin");
+    printf("\nEnter your choice: ");
+    scanf("%d", &choice);
+
+    if (choice == 1) {
+        fcfs(procs, n);
+    } else if (choice == 2) {
+        printf("Enter time quantum: ");
+        scanf("%d", &quantum);
+        roundRobin(procs, n, quantum);
+    } else {
+        printf("Invalid choice.\n");
+    }
+
+    return 0;
+}
