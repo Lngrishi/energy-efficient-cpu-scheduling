@@ -43,8 +43,8 @@ void printResults(Process p[], int n, const char *title,
     int i;
     double avgWait = 0.0, avgTat = 0.0;
 
-    /* simple power model */
-    double busyPower = 2.0;   /* units per time */
+    
+    double busyPower = 2.0;   
     double idlePower = 0.2;
     double totalEnergy = busyTime * busyPower + idleTime * idlePower;
 
@@ -122,3 +122,49 @@ int main() {
 
     return 0;
 }
+void roundRobin(Process p[], int n, int quantum) {
+    Process temp[MAX_PROCESSES];
+    int i;
+    for (i = 0; i < n; i++) {
+        temp[i] = p[i];
+        temp[i].start = -1;
+        temp[i].waiting = 0;
+        temp[i].turnaround = 0;
+    }
+
+    int time = 0;
+    int completed = 0;
+    double busyTime = 0.0;
+    double idleTime = 0.0;
+
+    while (completed < n) {
+        int executed = 0;
+
+        for (i = 0; i < n; i++) {
+            if (temp[i].burst > 0 && temp[i].arrival <= time) {
+                executed = 1;
+
+                if (temp[i].start == -1)
+                    temp[i].start = time;
+
+                int execTime = (temp[i].burst > quantum) ? quantum : temp[i].burst;
+                temp[i].burst -= execTime;
+                time += execTime;
+                busyTime += execTime;
+
+                if (temp[i].burst == 0) {
+                    temp[i].completion = time;
+                    completed++;
+                }
+            }
+        }
+
+        if (!executed) {
+            time++;
+            idleTime++;
+        }
+    }
+
+    printResults(temp, n, "Round Robin Scheduling", busyTime, idleTime);
+}
+
